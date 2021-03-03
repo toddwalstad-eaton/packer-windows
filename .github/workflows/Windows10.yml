@@ -1,0 +1,59 @@
+# This is a basic workflow to help you get started with Actions
+
+name: Win10Cd
+
+# Controls when the action will run. 
+on:
+  # Triggers the workflow on push or pull request events but only for the main branch
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+  # Allows you to run this workflow manually from the Actions tab
+  workflow_dispatch:
+
+# A workflow run is made up of one or more jobs that can run sequentially or in parallel
+jobs:
+  # This workflow contains a single job called "build"
+  build:
+    # The type of runner that the job will run on
+    runs-on: macOS-10.15
+
+    # Steps represent a sequence of tasks that will be executed as part of the job
+    steps:
+    # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
+    - uses: actions/checkout@v2
+    
+    - name: Install Packer
+      run: |
+        wget -nv -nc -O packer_1.6.0_darwin_amd64.zip https://releases.hashicorp.com/packer/1.6.0/packer_1.6.0_darwin_amd64.zip
+        sudo unzip -o packer_1.6.0_darwin_amd64.zip -d /usr/local/bin
+        displayName: Install Packer
+    - name: Install Ansible
+      run: |
+        pip install --user ansible
+        pip install pywinrm
+        ln -s /Users/runner/Library/Python/2.7/bin/ansible /usr/local/bin/ansible
+        ln -s /Users/runner/Library/Python/2.7/bin/ansible-playbook /usr/local/bin/ansible-playbook
+        displayName: Install Ansible
+    - name: Dump software version
+      run: |
+        packer --version
+        ansible --version
+        ansible-playbook --version
+        vboxmanage --version
+        sysctl -a | grep machdep.cpu
+        sysctl -a | grep mem
+        df -h .
+        displayName: Dump software version
+    - name: Build box 
+      run: |
+        # Set PACKER_LOG to 1 to troubleshoot infrastructure issues
+        # export PACKER_LOG=1
+        export PACKER_CACHE_DIR=$(Agent.BuildDirectory)/packer_cache/
+        # See https://github.com/ansible/ansible/issues/49207
+        # See https://github.com/ansible/ansible/issues/32499
+        export OBJC_DISABLE_INITIALIZE_FORK_SAFETY=YES
+        packer build --only=virtualbox-iso --var memory_size=6144 --var disk_size=30720 $(template).json
+        displayName: Build box 
