@@ -22,17 +22,23 @@ jobs:
 
     # Steps represent a sequence of tasks that will be executed as part of the job
     steps:
-    - shell: |
+    # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
+    - uses: actions/checkout@v2
+    
+    - name: Install Packer
+      run: |
         wget -nv -nc -O packer_1.6.0_darwin_amd64.zip https://releases.hashicorp.com/packer/1.6.0/packer_1.6.0_darwin_amd64.zip
         sudo unzip -o packer_1.6.0_darwin_amd64.zip -d /usr/local/bin
         displayName: Install Packer
-    - shell: |
+    - name: Install Ansible
+      run: |
         pip install --user ansible
         pip install pywinrm
         ln -s /Users/runner/Library/Python/2.7/bin/ansible /usr/local/bin/ansible
         ln -s /Users/runner/Library/Python/2.7/bin/ansible-playbook /usr/local/bin/ansible-playbook
         displayName: Install Ansible
-    - shell: |
+    - name: Dump software version
+      run: |
         packer --version
         ansible --version
         ansible-playbook --version
@@ -41,7 +47,8 @@ jobs:
         sysctl -a | grep mem
         df -h .
         displayName: Dump software version
-    - shell: |
+    - name: Build box 
+      run: |
         # Set PACKER_LOG to 1 to troubleshoot infrastructure issues
         # export PACKER_LOG=1
         export PACKER_CACHE_DIR=$(Agent.BuildDirectory)/packer_cache/
